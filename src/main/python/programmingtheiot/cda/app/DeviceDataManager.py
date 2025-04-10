@@ -74,6 +74,15 @@ class DeviceDataManager(IDataMessageListener):
 
 		self.triggerHvacTempCeiling = self.configUtil.getFloat(ConfigConst.CONSTRAINED_DEVICE, ConfigConst.TRIGGER_HVAC_TEMP_CEILING_KEY)
 
+		self.enableMqttClient = self.configUtil.getBoolean(section = ConfigConst.CONSTRAINED_DEVICE, key = ConfigConst.ENABLE_MQTT_CLIENT_KEY)
+
+		# Conectar con MqttClienteConnector
+		self.mqttClient = None
+
+		if self.enableMqttClient:
+			self.mqttClient = MqttClientConnector()
+			self.mqttClient.setDataMessageListener(self)
+
 	def getLatestActuatorDataResponseFromCache(self, name: str = None) -> ActuatorData:
 		"""
 		Retrieves the named actuator data (response) item from the internal data cache.
@@ -206,6 +215,10 @@ class DeviceDataManager(IDataMessageListener):
 			self.sensorAdapterMgr.startManager()
 
 		logging.info("Started DeviceDataManager.")
+
+		if self.mqttClient:
+			self.mqttClient.connectClient()
+			self.mqttClient.subscribeToTopic(ResourceNameEnum.CDA_ACTUATOR_CMD_RESOURCE, callback = None, qos = ConfigConst.DEFAULT_QOS)
 		
 	def stopManager(self):
 		logging.info("Stopping DeviceDataManager...")
@@ -217,6 +230,10 @@ class DeviceDataManager(IDataMessageListener):
 			self.sensorAdapterMgr.stopManager()
 
 		logging.info("Stopped DeviceDataManager.")
+
+		if self.mqttClient:
+			self.mqttClient.unsubscribeFromTopic(ResourceNameEnum.CDA_ACTUATOR_CMD_RESOURCE)
+			self.mqttClient.disconnectClient()
 		
 	def _handleIncomingDataAnalysis(self, msg: str):
 		"""
