@@ -100,11 +100,83 @@ class CoapClientConnector(IRequestResponseClient):
 			traceback.print_exception(type(e), e, e.__traceback__)
 
 
+	def _onGetResponse(self, response):
+		if not response:
+			logging.warning('Async GET response invalid. Ignoring.')
+			return
+
+		logging.info('Async GET response received.')
+
+		jsonData = response.payload.decode("utf-8")
+
+		if len(response.requested_path) >= 2:
+			dataType = response.requested_path[2]
+
+			if dataType == ConfigConst.ACTUATOR_CMD:
+				# TODO: convert payload to ActuatorData and verify!
+				logging.info("ActuatorData received: %s", jsonData)
+
+				try:
+					ad = DataUtil().jsonToActuatorData(jsonData)
+
+					if self.dataMsgListener:
+						self.dataMsgListener.handleActuatorCommandMessage(ad)
+				except:
+					logging.warning("Failed to decode actuator data. Ignoring: %s", jsonData)
+					return
+			else:
+				logging.info("Response data received. Payload: %s", jsonData)
+		else:
+			logging.info("Response data received. Payload: %s", jsonData)
+
+
+
 	def sendPostRequest(self, resource: ResourceNameEnum = None, name: str = None, enableCON: bool = False, payload: str = None, timeout: int = IRequestResponseClient.DEFAULT_TIMEOUT) -> bool:
 		pass
 
 	def sendPutRequest(self, resource: ResourceNameEnum = None, name: str = None, enableCON: bool = False, payload: str = None, timeout: int = IRequestResponseClient.DEFAULT_TIMEOUT) -> bool:
-		pass
+		if resource or name:
+			resourcePath = self._createResourcePath(resource, name)
+
+			logging.info("Issuing Async PUT to path: " + resourcePath)
+
+			asyncio.get_event_loop().run_until_complete(self._handlePutRequest(resourcePath=resourcePath, payload=payload, enableCON=enableCON))
+		else:
+			logging.warning("Can't issue Async PUT - no path or path list provided.")
+
+
+	async def _handlePutRequest(self, resourcePath: str = None, payload: str = None, enableCON: bool = False):
+		try:
+			msgType = NON
+
+			if enableCON:
+				msgType = CON
+
+			payloadBytes = b''
+
+			# Decide which encoding to use - can also load from config
+			if payload:
+				payloadBytes = payload.encode('utf-8')
+
+			msg = Message(mtype=msgType, payload=payloadBytes, code=Code.PUT, uri=resourcePath)
+			req = self.coapClient.request(msg)
+			responseData = await req.response
+
+			self._onPutResponse(responseData)
+
+		except Exception as e:
+			# TODO: for debugging, you may want to optionally include the stack trace, as shown
+			logging.warning("Failed to process PUT request for path: " + resourcePath)
+			traceback.print_exception(type(e), e, e.__traceback__)
+
+
+	def _onPutResponse(self, response):
+		if not response:
+			logging.warning('PUT response invalid. Ignoring.')
+			return
+
+		logging.info('PUT response received: %s', response.payload)
+
 
 	def setDataMessageListener(self, listener: IDataMessageListener = None) -> bool:
 		pass
@@ -148,31 +220,4 @@ class CoapClientConnector(IRequestResponseClient):
 		return resourcePath
 
 
-	def _onGetResponse(self, response):
-		if not response:
-			logging.warning('Async GET response invalid. Ignoring.')
-			return
-
-		logging.info('Async GET response received.')
-
-		jsonData = response.payload.decode("utf-8")
-
-		if len(response.requested_path) >= 2:
-			dataType = response.requested_path[2]
-
-			if dataType == ConfigConst.ACTUATOR_CMD:
-				# TODO: convert payload to ActuatorData and verify!
-				logging.info("ActuatorData received: %s", jsonData)
-
-				try:
-					ad = DataUtil().jsonToActuatorData(jsonData)
-
-					if self.dataMsgListener:
-						self.dataMsgListener.handleActuatorCommandMessage(ad)
-				except:
-					logging.warning("Failed to decode actuator data. Ignoring: %s", jsonData)
-					return
-			else:
-				logging.info("Response data received. Payload: %s", jsonData)
-		else:
-			logging.info("Response data received. Payload: %s", jsonData)
+	
