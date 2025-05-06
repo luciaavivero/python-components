@@ -67,7 +67,9 @@ class MqttClientConnector(IPubSubClient):
 		#      a random value (not recommended if setting clean session flag to False)
 
 		# TODO: the following is just a sample; use your own unique ID
-		if not clientID:
+		if clientID:
+			self.clientID = clientID
+		else:
 			self.clientID = \
 				self.config.getProperty( \
 					ConfigConst.CONSTRAINED_DEVICE, ConfigConst.DEVICE_LOCATION_ID_KEY)
