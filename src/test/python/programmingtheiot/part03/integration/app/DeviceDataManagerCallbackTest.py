@@ -55,7 +55,7 @@ class DeviceDataManagerWithCommsTest(unittest.TestCase):
 		actuatorData = ActuatorData(typeID = ConfigConst.HVAC_ACTUATOR_TYPE)
 		actuatorData.setCommand(ConfigConst.COMMAND_ON)
 		actuatorData.setStateData("This is a test.")
-		actuatorData.setValue(52)
+		#actuatorData.setValue(52)
 		
 		ddMgr.handleActuatorCommandMessage(actuatorData)
 		
