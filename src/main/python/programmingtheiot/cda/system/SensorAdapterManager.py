@@ -63,6 +63,10 @@ class SensorAdapterManager(object):
 			teClazz = getattr(teModule, 'TemperatureSensorEmulatorTask')
 			self.tempAdapter = teClazz()
 
+			huModule = import_module('programmingtheiot.cda.emulated.HumoSensorEmulatorTask', 'HumoSensorEmulatorTask')
+			huClazz = getattr(huModule, 'HumoSensorEmulatorTask')
+			self.humoAdapter = huClazz()
+
 	def __init__(self):
 		self.configUtil = ConfigUtil()
 
@@ -84,6 +88,7 @@ class SensorAdapterManager(object):
 		self.humidityAdapter = None
 		self.pressureAdapter = None
 		self.tempAdapter     = None
+		self.humoAdapter 	 = None
 
 		# see PIOT-CDA-03-006 description for thoughts on the next line of code
 		self._initEnvironmentalSensorTasks()
@@ -92,19 +97,23 @@ class SensorAdapterManager(object):
 		humidityData = self.humidityAdapter.generateTelemetry()
 		pressureData = self.pressureAdapter.generateTelemetry()
 		tempData     = self.tempAdapter.generateTelemetry()
+		humoData	 = self.humoAdapter.generateTelemetry()
 
 		humidityData.setLocationID(self.locationID)
 		pressureData.setLocationID(self.locationID)
 		tempData.setLocationID(self.locationID)
+		humoData.setLocationID(self.locationID)
 
 		logging.debug('Generated humidity data: ' + str(humidityData))
 		logging.debug('Generated pressure data: ' + str(pressureData))
 		logging.debug('Generated temp data: ' + str(tempData))
+		logging.debug('Generated humo data: ' + str(humoData))
 
 		if self.dataMsgListener:
 			self.dataMsgListener.handleSensorMessage(humidityData)
 			self.dataMsgListener.handleSensorMessage(pressureData)
 			self.dataMsgListener.handleSensorMessage(tempData)
+			self.dataMsgListener.handleSensorMessage(humoData)
 		
 	def setDataMessageListener(self, listener: IDataMessageListener) -> bool:
 		if listener:

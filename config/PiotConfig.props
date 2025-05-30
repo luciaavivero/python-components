@@ -58,6 +58,8 @@ pressureSimFloor   =  990.0
 pressureSimCeiling = 1010.0
 tempSimFloor       =   15.0
 tempSimCeiling     =   25.0
+humoSimFloor       =   400.0
+humoSimCeiling     =   1000.0
 
 # configurable limits for actuator triggers
 handleTempChangeOnDevice = True

@@ -47,6 +47,11 @@ class ActuatorAdapterManager(object):
 			leDisplayModule=import_module('programmingtheiot.cda.emulated.LedDisplayEmulatorTask','LedDisplayEmulatorTask')
 			leClazz=getattr(leDisplayModule,'LedDisplayEmulatorTask')
 			self.ledDisplayActuator=leClazz()
+
+			# create the HUMO actuator emulator
+			humoModule=import_module('programmingtheiot.cda.emulated.HumoEmulatorTask','HumoEmulatorTask')
+			huClazz=getattr(humoModule,'HumoEmulatorTask')
+			self.humoActuator=huClazz()
 	
 	def __init__(self, dataMsgListener: IDataMessageListener = None):
 		self.dataMsgListener = dataMsgListener
@@ -61,6 +66,7 @@ class ActuatorAdapterManager(object):
 		self.humidifierActuator = None
 		self.hvacActuator       = None
 		self.ledDisplayActuator = None
+		self.humoActuator = None
 
 		# see PIOT-CDA-03-007 description for thoughts on the next line of code
 		self._initEnvironmentalActuationTasks()
@@ -81,6 +87,8 @@ class ActuatorAdapterManager(object):
 					responseData = self.hvacActuator.updateActuator(data)
 				elif aType == ConfigConst.LED_DISPLAY_ACTUATOR_TYPE and self.ledDisplayActuator:
 					responseData = self.ledDisplayActuator.updateActuator(data)
+				elif aType == ConfigConst.HUMO_ACTUATOR_TYPE and self.humoActuator:
+					responseData = self.humoActuator.updateActuator(data)
 				else:
 					logging.warning("No valid actuator type. Ignoring actuation for type: %s", data.getTypeID())
 
